@@ -23,30 +23,33 @@ class Model():
             self.g_optimizer = optim.Adadelta(self.G.parameters())
             self.d_optimizer = optim.Adadelta(self.D.parameters())
 
+        # extract all layers prior to the last softmax of VGG-19
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
         self.vgg19 = nn.Sequential(*vgg19_layers)
 
         self.adversarial_loss = torch.nn.BCELoss()
 
-        self.network.to(device)
+        # TODO
+        # self.network.to(device)
 
     def load_state(self, fname):
         with open(fname, 'rb') as f:
             state = pickle.load(f)
         
-        self.epoch      = state["epoch"]
-        self.D          = state["D"]
-        self.G          = state["G"]
-        self.g_optimizer  = state["g_optimizer"]
-        self.d_optimizer  = state["d_optimizer"]
+        self.epoch       = state["epoch"]
+        self.G           = state["G"]
+        self.D           = state["D"]
+        self.g_optimizer = state["g_optimizer"]
+        self.d_optimizer = state["d_optimizer"]
 
     def save_state(self):
         fname = "%s/save" % self.args.save_dir
         state = {
-            "D"         : self.D,
-            "G"         : self.G,
-            "epoch"     : self.epoch,
-            "optimizer" : self.optimizer,
+            "epoch"       : self.epoch,
+            "G"           : self.G,
+            "D"           : self.D,
+            "g_optimizer" : self.g_optimizer,
+            "d_optimizer" : self.d_optimizer,
         }
         with open("%s_%d.pkl" % (fname, self.epoch), 'wb') as f:
             pickle.dump(state, f)
