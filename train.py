@@ -1,6 +1,8 @@
 import argparse
 from dataset import ImageDataset
+from models import Model
 import numpy as np
+import os
 import random
 import sys
 import torch
@@ -55,18 +57,15 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    full_dataset = ImageDataset(args.data_dir)
-    train_size = int(0.8 * len(full_dataset))
-    val_size   = int(0.1 * len(full_dataset))
-    test_size  = len(full_dataset) - train_size - val_size
-    train_ds, val_ds, test_ds = data.random_split(full_dataset, [train_size, val_size, test_size])
+    datasets = {
+        key: ImageDataset(os.path.join(args.data_dir, key)) for key in ['train', 'val' , 'test']
+    }
+    dataloaders = {
+        key: data.DataLoader(ds, batch_size=4, shuffle=True, num_workers=4) for key, ds in datasets.items()
+    }
 
-    train_dl = data.DataLoader(train_ds, batch_size=4, shuffle=True, num_workers=4)
-
-    """
-    model = Model(args, train_dataset, test_dataset)
-    model.train()
-    """
+    model = Model(args)
+    model.train(dataloaders)
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import os
 from PIL import Image
+import torch
 from torch.utils import data
 
 class ImageDataset(data.Dataset):
@@ -23,5 +24,5 @@ class ImageDataset(data.Dataset):
         low_res  = low_res.transpose((2, 0, 1))
         high_res = high_res.transpose((2, 0, 1))
         
-        return {'low_res' : low_res,
-                'high_res': high_res}
+        return {'low_res' : torch.from_numpy(low_res).float(),
+                'high_res': torch.from_numpy(high_res).float()}

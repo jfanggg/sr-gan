@@ -27,4 +27,6 @@ def make_dataset(in_dir, out_dir, num_samples):
         cropped.save(os.path.join(out_dir, "{}.png".format(sampled)))
         sampled += 1
 
-make_dataset("Images", "data", 50)
+make_dataset("Images", "data/train", 80)
+make_dataset("Images", "data/val",   10)
+make_dataset("Images", "data/test",  10)

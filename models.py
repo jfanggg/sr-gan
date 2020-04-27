@@ -1,4 +1,6 @@
+import math
 import numpy as np
+import os
 import pickle
 import sys
 import torch
@@ -9,10 +11,8 @@ import torchvision.models as models
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Model():
-    def __init__(self, args, train_dataset, test_dataset):
+    def __init__(self, args):
         self.args = args
-        self.train_dataset = train_dataset
-        self.test_dataset = test_dataset
 
         if args.model:
             self.load_state(args.model)
@@ -43,6 +43,9 @@ class Model():
         self.d_optimizer = state["d_optimizer"]
 
     def save_state(self):
+        if not os.path.exists(self.args.save_dir):
+            os.mkdir(self.args.save_dir)
+
         fname = "%s/save" % self.args.save_dir
         state = {
             "epoch"       : self.epoch,
@@ -54,23 +57,26 @@ class Model():
         with open("%s_%d.pkl" % (fname, self.epoch), 'wb') as f:
             pickle.dump(state, f)
 
-    def train(self, dataloader):
+    def train(self, dataloaders):
         while self.epoch < self.args.epochs:
             print("=== Epoch: %d ===" % self.epoch)
             if self.epoch % self.args.save_epochs == 0:
                 self.save_state()
             if self.epoch % self.args.eval_epochs == 0:
-                self.evaluate()
+                self.evaluate(dataloaders)
 
             self.D.train()
             self.G.train()
             g_losses = []
             d_losses = []
 
-            for low_res, high_res in dataloader:
+            for batch in dataloaders['train']:
+                low_res  = batch['low_res']
+                high_res = batch['high_res']
+
                 batch_size = high_res.size(0)
-                real = Variable(Tensor(batch_size, 1).fill_(1.0), requires_grad=False)
-                fake = Variable(Tensor(batch_size, 1).fill_(0.0), requires_grad=False)
+                real = torch.ones((batch_size, 1), requires_grad=False)
+                fake = torch.zeros((batch_size, 1), requires_grad=False)
 
                 """ Generator training """
                 self.g_optimizer.zero_grad()
@@ -82,7 +88,7 @@ class Model():
 
                 g_loss = content_loss + 1E-3 * adversarial_loss
                 g_losses.append(g_loss.item())
-                g_loss.backwards()
+                g_loss.backward()
                 self.g_optimizer.step()
 
                 """ Discriminator training """
@@ -105,30 +111,30 @@ class Model():
 
         print("Finished training")
         self.save_state()
-        self.evaluate()
+        self.evaluate(dataloaders)
         sys.stdout.flush()
 
-    def evaluate(self):
-        self.network.eval()
-
-        # TODO:
+    def evaluate(self, dataloaders):
+        # TODO
+        pass
 
 class ResidualBlock(nn.Module):
     def __init__(self):
-        res_block = nn.Sequential(
-            nn.Conv2D(64, 64, 3, padding=1),
-            nn.BatchNorm2D(64),
+        super(ResidualBlock, self).__init__()
+        self.res_block = nn.Sequential(
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
             nn.PReLU(),
-            nn.Conv2D(64, 64, 3, padding=1),
-            nn.BatchNorm2D(64),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
         )
 
     def forward(self, x):
-        return x + res_block(x)
+        return x + self.res_block(x)
 
 def shuffle_block():
     return nn.Sequential(
-        nn.Conv2D(64, 256, 3, padding=1),
+        nn.Conv2d(64, 256, 3, padding=1),
         nn.PixelShuffle(2),
         nn.PReLU()
     )
@@ -139,11 +145,11 @@ class Generator(nn.Module):
         self.B = 16
         self.S = 2
 
-        self.conv1      = nn.Sequential(nn.Conv2D(3, 64, 9, padding=4), nn.PReLU())
+        self.conv1      = nn.Sequential(nn.Conv2d(3, 64, 9, padding=4), nn.PReLU())
         self.res_blocks = nn.Sequential(*[ResidualBlock() for _ in range(self.B)])
-        self.conv2      = nn.Sequential(nn.Conv2D(64, 64, 3, padding=1), nn.BatchNorm2D(64))
+        self.conv2      = nn.Sequential(nn.Conv2d(64, 64, 3, padding=1), nn.BatchNorm2d(64))
         self.shuffle    = nn.Sequential(*[shuffle_block() for _ in range(self.S)])
-        self.conv3      = nn.Conv2D(64, 3, 9, padding=4)
+        self.conv3      = nn.Conv2d(64, 3, 9, padding=4)
 
     def forward(self, x):
         """
@@ -153,7 +159,6 @@ class Generator(nn.Module):
         Returns:
         - [N, 3, 4H, 4W] Tensor
         """
-        x = image.float().to(device)
 
         x = self.conv1(x)
         saved_x = x
@@ -165,13 +170,13 @@ class Generator(nn.Module):
 
 def conv_block(in_channels, out_channels, kernel_size, stride, padding):
     return nn.Sequential(
-        nn.Conv2D(in_channels, out_channels, kernel_size, stride=stride, padding=padding),
-        nn.BatchNorm2D(out_channels),
+        nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding),
+        nn.BatchNorm2d(out_channels),
         nn.LeakyReLU(0.2)
     )
 
 def conv_size(x_in, kernel_size, stride, padding):
-    return floor((x_in + 2 * padding - kernel_size) / stride + 1)
+    return math.floor((x_in + 2 * padding - kernel_size) / stride + 1)
 
 class Discriminator(nn.Module):
     def __init__(self):
@@ -183,7 +188,7 @@ class Discriminator(nn.Module):
         layers = []
         for idx, out_channels in enumerate([64, 128, 256, 512]):
             if idx == 0:
-                layers.extend([nn.Conv2D(in_channels, out_channels, 3, 1, 1), nn.LeakyReLU(0.2)])
+                layers.extend([nn.Conv2d(in_channels, out_channels, 3, 1, 1), nn.LeakyReLU(0.2)])
             else:
                 layers.append(conv_block(in_channels, out_channels, 3, 1, 1))
 
@@ -192,6 +197,7 @@ class Discriminator(nn.Module):
             im_width = conv_size(im_width, 3, 1, 1)
             im_width = conv_size(im_width, 3, 2, 1)
             in_channels = out_channels
+        self.convs = nn.Sequential(*layers)
 
         self.fc = nn.Sequential(
             nn.Linear(im_width * im_width * 512, 1024),
@@ -199,7 +205,6 @@ class Discriminator(nn.Module):
             nn.Linear(1024, 1),
             nn.Sigmoid()
         )
-        self.model = nn.Sequential(*layers)
 
     def forward(self, x):
         """
