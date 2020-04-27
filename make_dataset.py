@@ -14,8 +14,7 @@ def make_dataset(in_dir, out_dir, num_samples):
     sampled = 0
     while sampled < num_samples:
         idx = np.random.randint(len(all_files))
-        fname = all_files[idx]
-        im = Image.open(fname)
+        im = Image.open(all_files[idx])
         w, h = im.size
 
         if w <= IMAGE_SIZE or h <= IMAGE_SIZE:

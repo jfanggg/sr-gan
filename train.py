@@ -1,11 +1,10 @@
 import argparse
+from dataset import ImageDataset
 import numpy as np
-import pickle
 import random
 import sys
-import time
 import torch
-import torch.nn as nn
+from torch.utils import data
 
 def parse_args():
     parser = argparse.ArgumentParser(description='main.py')
@@ -24,6 +23,11 @@ def parse_args():
         type=int,
         default=5,
         help='How often (in epochs) to save model')
+    parser.add_argument(
+        '--data_dir',
+        type=str,
+        default='data',
+        help='Name of directory to get image data')
     parser.add_argument(
         '--save_dir',
         type=str,
@@ -51,10 +55,18 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    # TODO: datasets
+    full_dataset = ImageDataset(args.data_dir)
+    train_size = int(0.8 * len(full_dataset))
+    val_size   = int(0.1 * len(full_dataset))
+    test_size  = len(full_dataset) - train_size - val_size
+    train_ds, val_ds, test_ds = data.random_split(full_dataset, [train_size, val_size, test_size])
 
+    train_dl = data.DataLoader(train_ds, batch_size=4, shuffle=True, num_workers=4)
+
+    """
     model = Model(args, train_dataset, test_dataset)
     model.train()
+    """
 
 if __name__ == "__main__":
-    m
+    main()
