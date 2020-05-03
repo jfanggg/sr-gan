@@ -29,9 +29,6 @@ class Model():
 
         self.adversarial_loss = torch.nn.BCELoss()
 
-        # TODO
-        # self.network.to(device)
-
     def load_state(self, fname):
         with open(fname, 'rb') as f:
             state = pickle.load(f)
@@ -58,6 +55,9 @@ class Model():
             pickle.dump(state, f)
 
     def train(self, dataloaders):
+        self.D.to(device)
+        self.G.to(device)
+
         while self.epoch < self.args.epochs:
             print("=== Epoch: %d ===" % self.epoch)
             if self.epoch % self.args.save_epochs == 0:
@@ -73,10 +73,14 @@ class Model():
             for batch in dataloaders['train']:
                 low_res  = batch['low_res']
                 high_res = batch['high_res']
+                low_res.to(device)
+                high_res.to(device)
 
                 batch_size = high_res.size(0)
                 real = torch.ones((batch_size, 1), requires_grad=False)
                 fake = torch.zeros((batch_size, 1), requires_grad=False)
+                real.to(device)
+                fake.to(device)
 
                 """ Generator training """
                 self.g_optimizer.zero_grad()
