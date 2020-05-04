@@ -3,6 +3,7 @@ import numpy as np
 import os
 import pickle
 import sys
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -65,6 +66,7 @@ class Model():
         self.D.to(device)
         self.G.to(device)
         self.vgg19.to(device)
+        print("Starting training. Time: {}".format(time.ctime()))
 
         while self.epoch <= self.args.epochs:
             # Train for one epoch
@@ -73,17 +75,17 @@ class Model():
             g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
-            print("Epoch {}/{}".format(self.epoch, self.args.epochs))
+            print("Epoch: {}/{} | Time: {}".format(self.epoch, self.args.epochs, time.ctime()))
 
             # Print evaluation
+            train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
             if self.epoch % self.args.eval_epochs == 0:
-                train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
-
                 if 'val' in dataloaders:
                     val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
                     self.val_losses.append([val_g_loss, val_d_loss])
                     train_string += " | Val G loss: {:.4f} | Val D loss: {:.4f}".format(val_g_loss, val_d_loss)
-                print(train_string)
+
+            print(train_string)
 
             # Save the model
             if self.epoch % self.args.save_epochs == 0:
