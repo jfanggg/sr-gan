@@ -28,10 +28,10 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    datasets, dataloaders = {}, {}
+    dataloaders = {}
     for key in ['train', 'val' , 'test']:
-        datasets[key] = ImageDataset(os.path.join(args.data_dir, key))
-        dataloaders[key] = data.DataLoader(datasets[key], batch_size=4, shuffle=True, num_workers=4)
+        dataset = ImageDataset(os.path.join(args.data_dir, key))
+        dataloaders[key] = data.DataLoader(dataset, batch_size=4, shuffle=True, num_workers=4)
 
     model = Model(args)
     model.train(dataloaders)
