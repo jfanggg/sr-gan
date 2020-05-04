@@ -19,6 +19,8 @@ class Model():
         self.D = Discriminator()
         self.g_optimizer = optim.Adadelta(self.G.parameters())
         self.d_optimizer = optim.Adadelta(self.D.parameters())
+        self.train_losses = []
+        self.val_losses = []
 
         if args.load_model:
             self.load_state(args.load_model)
@@ -34,6 +36,8 @@ class Model():
         state = torch.load(fname)
 
         self.epoch = state["epoch"]
+        self.train_losses = state["train_losses"]
+        self.val_losses = state["val_losses"]
         self.G.load_state_dict(state["G"])
         self.D.load_state_dict(state["D"])
         self.g_optimizer.load_state_dict(state["g_optimizer"])
@@ -50,6 +54,8 @@ class Model():
             "D"           : self.D.state_dict(),
             "g_optimizer" : self.g_optimizer.state_dict(),
             "d_optimizer" : self.d_optimizer.state_dict(),
+            "train_losses": self.train_losses,
+            "val_losses"  : self.val_losses
         }
         torch.save(state, fname)
 
@@ -63,11 +69,13 @@ class Model():
             self.D.train()
             self.G.train()
             g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
+            self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
 
             # Print evaluation
             if self.epoch % self.args.eval_epochs == 0:
                 val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
+                self.val_losses.append([val_g_loss, val_d_loss])
 
                 print("Epoch {}/{}".format(self.epoch, self.args.epochs))
                 print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss, d_loss, val_g_loss, val_d_loss))
