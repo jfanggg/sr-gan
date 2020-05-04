@@ -72,16 +72,12 @@ class Model():
             g_losses, d_losses = [], []
 
             for batch in dataloaders['train']:
-                low_res  = batch['low_res']
-                high_res = batch['high_res']
-                low_res.to(device)
-                high_res.to(device)
+                low_res  = batch['low_res'].to(device)
+                high_res = batch['high_res'].to(device)
 
                 batch_size = high_res.size(0)
-                real = torch.ones((batch_size, 1), requires_grad=False)
-                fake = torch.zeros((batch_size, 1), requires_grad=False)
-                real.to(device)
-                fake.to(device)
+                real = torch.ones((batch_size, 1), requires_grad=False).to(device)
+                fake = torch.zeros((batch_size, 1), requires_grad=False).to(device)
 
                 """ Generator training """
                 self.g_optimizer.zero_grad()
