@@ -29,9 +29,10 @@ def main():
     np.random.seed(args.seed)
 
     dataloaders = {}
-    for key in ['train', 'val' , 'test']:
-        dataset = ImageDataset(os.path.join(args.data_dir, key))
-        dataloaders[key] = data.DataLoader(dataset, batch_size=4, shuffle=True, num_workers=4)
+    for key in ['train', 'val']:
+        if os.path.exists(os.path.join(args.data_dir, key)):
+            dataset = ImageDataset(os.path.join(args.data_dir, key))
+            dataloaders[key] = data.DataLoader(dataset, batch_size=4, shuffle=True, num_workers=4)
 
     model = Model(args)
     model.train(dataloaders)

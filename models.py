@@ -74,11 +74,14 @@ class Model():
 
             # Print evaluation
             if self.epoch % self.args.eval_epochs == 0:
-                val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
-                self.val_losses.append([val_g_loss, val_d_loss])
-
                 print("Epoch {}/{}".format(self.epoch, self.args.epochs))
-                print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss, d_loss, val_g_loss, val_d_loss))
+                train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
+
+                if 'val' in dataloaders:
+                    val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
+                    self.val_losses.append([val_g_loss, val_d_loss])
+                    train_string += " | Val G loss: {:.4f} | Val D loss: {:.4f}".format(val_g_loss, val_d_loss)
+                print(train_string)
 
             # Save the model
             if self.epoch % self.args.save_epochs == 0:
