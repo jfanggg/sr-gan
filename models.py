@@ -95,7 +95,9 @@ class Model():
     def evaluate(self, dataloader):
         self.D.eval()
         self.G.eval()
-        return self.run_epoch(dataloader, train=False)
+
+        with torch.no_grad():
+            return self.run_epoch(dataloader, train=False)
 
     def run_epoch(self, dataloader, train):
         g_losses, d_losses = [], []
