@@ -88,7 +88,7 @@ class Model():
 
                 generated = self.G(low_res)
 
-                content_loss = self.content_loss(self.vgg19(high_res) - self.vgg19(generated))
+                content_loss = self.content_loss(self.vgg19(high_res), self.vgg19(generated))
                 adversarial_loss = self.bce_loss(self.D(generated), real)
 
                 g_loss = content_loss + 1E-3 * adversarial_loss
