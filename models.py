@@ -71,10 +71,10 @@ class Model():
             g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
+            print("Epoch {}/{}".format(self.epoch, self.args.epochs))
 
             # Print evaluation
             if self.epoch % self.args.eval_epochs == 0:
-                print("Epoch {}/{}".format(self.epoch, self.args.epochs))
                 train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
 
                 if 'val' in dataloaders:
