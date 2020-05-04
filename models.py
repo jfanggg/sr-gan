@@ -27,7 +27,8 @@ class Model():
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
         self.vgg19 = nn.Sequential(*vgg19_layers)
 
-        self.adversarial_loss = torch.nn.BCELoss()
+        self.content_loss = torch.nn.MSELoss()
+        self.bce_loss = torch.nn.BCELoss()
 
     def load_state(self, fname):
         with open(fname, 'rb') as f:
@@ -57,6 +58,7 @@ class Model():
     def train(self, dataloaders):
         self.D.to(device)
         self.G.to(device)
+        self.vgg19.to(device)
 
         while self.epoch < self.args.epochs:
             print("=== Epoch: %d ===" % self.epoch)
@@ -67,8 +69,7 @@ class Model():
 
             self.D.train()
             self.G.train()
-            g_losses = []
-            d_losses = []
+            g_losses, d_losses = [], []
 
             for batch in dataloaders['train']:
                 low_res  = batch['low_res']
@@ -87,8 +88,8 @@ class Model():
 
                 generated = self.G(low_res)
 
-                content_loss = torch.mean(self.vgg19(high_res) - self.vgg19(generated))
-                adversarial_loss = torch.sum(-self.D(generated))
+                content_loss = self.content_loss(self.vgg19(high_res) - self.vgg19(generated))
+                adversarial_loss = self.bce_loss(self.D(generated), real)
 
                 g_loss = content_loss + 1E-3 * adversarial_loss
                 g_losses.append(g_loss.item())
@@ -98,8 +99,8 @@ class Model():
                 """ Discriminator training """
                 self.d_optimizer.zero_grad()
 
-                real_loss = self.adversarial_loss(self.D(high_res), real)
-                fake_loss = self.adversarial_loss(self.D(generated.detach()), fake)
+                real_loss = self.bce_loss(self.D(high_res), real)
+                fake_loss = self.bce_loss(self.D(generated.detach()), fake)
 
                 d_loss = (real_loss + fake_loss) / 2
                 d_losses.append(d_loss.item())
