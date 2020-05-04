@@ -28,6 +28,8 @@ class Model():
         # extract all layers prior to the last softmax of VGG-19
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
         self.vgg19 = nn.Sequential(*vgg19_layers)
+        for param in self.vgg19.parameters():
+            param.requires_grad = False
 
         self.mse_loss = torch.nn.MSELoss()
         self.bce_loss = torch.nn.BCELoss()
