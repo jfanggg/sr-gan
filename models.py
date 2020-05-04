@@ -63,17 +63,14 @@ class Model():
             self.D.train()
             self.G.train()
             g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
-            g_loss2, d_loss2 = self.run_epoch(dataloaders['train'], train=True)
             self.epoch += 1
 
             # Print evaluation
             if self.epoch % self.args.eval_epochs == 0:
                 val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
-                val_g_loss2, val_d_loss2 = self.evaluate(dataloaders['val'])
 
                 print("Epoch {}/{}".format(self.epoch, self.args.epochs))
                 print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss, d_loss, val_g_loss, val_d_loss))
-                print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss2, d_loss2, val_g_loss2, val_d_loss2))
 
             # Save the model
             if self.epoch % self.args.save_epochs == 0:
