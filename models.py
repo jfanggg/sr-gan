@@ -14,46 +14,44 @@ class Model():
     def __init__(self, args):
         self.args = args
 
-        if args.model:
-            self.load_state(args.model)
-        else:
-            self.epoch = 0
-            self.G = Generator()
-            self.D = Discriminator()
-            self.g_optimizer = optim.Adadelta(self.G.parameters())
-            self.d_optimizer = optim.Adadelta(self.D.parameters())
+        self.epoch = 0
+        self.G = Generator()
+        self.D = Discriminator()
+        self.g_optimizer = optim.Adadelta(self.G.parameters())
+        self.d_optimizer = optim.Adadelta(self.D.parameters())
+
+        if args.load_model:
+            self.load_state(args.load_model)
 
         # extract all layers prior to the last softmax of VGG-19
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
         self.vgg19 = nn.Sequential(*vgg19_layers)
 
-        self.content_loss = torch.nn.MSELoss()
+        self.mse_loss = torch.nn.MSELoss()
         self.bce_loss = torch.nn.BCELoss()
 
     def load_state(self, fname):
-        with open(fname, 'rb') as f:
-            state = pickle.load(f)
-        
-        self.epoch       = state["epoch"]
-        self.G           = state["G"]
-        self.D           = state["D"]
-        self.g_optimizer = state["g_optimizer"]
-        self.d_optimizer = state["d_optimizer"]
+        state = torch.load(fname)
+
+        self.epoch = state["epoch"]
+        self.G.load_state_dict(state["G"])
+        self.D.load_state_dict(state["D"])
+        self.g_optimizer.load_state_dict(state["g_optimizer"])
+        self.d_optimizer.load_state_dict(state["d_optimizer"])
 
     def save_state(self):
         if not os.path.exists(self.args.save_dir):
             os.mkdir(self.args.save_dir)
 
-        fname = "%s/save" % self.args.save_dir
+        fname = "%s/save_%d.pkl" % (self.args.save_dir, self.epoch)
         state = {
             "epoch"       : self.epoch,
-            "G"           : self.G,
-            "D"           : self.D,
-            "g_optimizer" : self.g_optimizer,
-            "d_optimizer" : self.d_optimizer,
+            "G"           : self.G.state_dict(),
+            "D"           : self.D.state_dict(),
+            "g_optimizer" : self.g_optimizer.state_dict(),
+            "d_optimizer" : self.d_optimizer.state_dict(),
         }
-        with open("%s_%d.pkl" % (fname, self.epoch), 'wb') as f:
-            pickle.dump(state, f)
+        torch.save(state, fname)
 
     def train(self, dataloaders):
         self.D.to(device)
@@ -84,7 +82,7 @@ class Model():
 
                 generated = self.G(low_res)
 
-                content_loss = self.content_loss(self.vgg19(high_res), self.vgg19(generated))
+                content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
                 adversarial_loss = self.bce_loss(self.D(generated), real)
 
                 g_loss = content_loss + 1E-3 * adversarial_loss
