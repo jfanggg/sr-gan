@@ -58,64 +58,73 @@ class Model():
         self.G.to(device)
         self.vgg19.to(device)
 
-        while self.epoch < self.args.epochs:
-            print("=== Epoch: %d ===" % self.epoch)
-            if self.epoch % self.args.save_epochs == 0:
-                self.save_state()
-            if self.epoch % self.args.eval_epochs == 0:
-                self.evaluate(dataloaders)
-
+        while self.epoch <= self.args.epochs:
+            # Train for one epoch
             self.D.train()
             self.G.train()
-            g_losses, d_losses = [], []
-
-            for batch in dataloaders['train']:
-                low_res  = batch['low_res'].to(device)
-                high_res = batch['high_res'].to(device)
-
-                batch_size = high_res.size(0)
-                real = torch.ones((batch_size, 1), requires_grad=False).to(device)
-                fake = torch.zeros((batch_size, 1), requires_grad=False).to(device)
-
-                """ Generator training """
-                self.g_optimizer.zero_grad()
-
-                generated = self.G(low_res)
-
-                content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
-                adversarial_loss = self.bce_loss(self.D(generated), real)
-
-                g_loss = content_loss + 1E-3 * adversarial_loss
-                g_losses.append(g_loss.item())
-                g_loss.backward()
-                self.g_optimizer.step()
-
-                """ Discriminator training """
-                self.d_optimizer.zero_grad()
-
-                real_loss = self.bce_loss(self.D(high_res), real)
-                fake_loss = self.bce_loss(self.D(generated.detach()), fake)
-
-                d_loss = (real_loss + fake_loss) / 2
-                d_losses.append(d_loss.item())
-                d_loss.backward()
-                self.d_optimizer.step()
-
-            if self.epoch % self.args.eval_epochs == 0:
-                print("Train G loss: ", np.mean(g_losses))
-                print("Train D loss: ", np.mean(d_losses))
-
-            sys.stdout.flush()
+            g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
+            g_loss2, d_loss2 = self.run_epoch(dataloaders['train'], train=True)
             self.epoch += 1
+
+            # Print evaluation
+            if self.epoch % self.args.eval_epochs == 0:
+                val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
+                val_g_loss2, val_d_loss2 = self.evaluate(dataloaders['val'])
+
+                print("Epoch {}/{}".format(self.epoch, self.args.epochs))
+                print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss, d_loss, val_g_loss, val_d_loss))
+                print("Train G loss: {:.4f} | Train D loss: {:.4f} | Val G loss: {:.4f} | Val D loss: {:.4f}".format(g_loss2, d_loss2, val_g_loss2, val_d_loss2))
+
+            # Save the model
+            if self.epoch % self.args.save_epochs == 0:
+                self.save_state()
 
         print("Finished training")
         self.save_state()
-        self.evaluate(dataloaders)
-        sys.stdout.flush()
 
-    def evaluate(self, dataloaders):
-        # TODO
-        pass
+    def evaluate(self, dataloader):
+        self.D.eval()
+        self.G.eval()
+        return self.run_epoch(dataloader, train=False)
+
+    def run_epoch(self, dataloader, train):
+        g_losses, d_losses = [], []
+
+        for batch in dataloader:
+            low_res  = batch['low_res'].to(device)
+            high_res = batch['high_res'].to(device)
+
+            batch_size = high_res.size(0)
+            real = torch.ones((batch_size, 1), requires_grad=False).to(device)
+            fake = torch.zeros((batch_size, 1), requires_grad=False).to(device)
+
+            """ Generator """
+            self.g_optimizer.zero_grad()
+
+            generated = self.G(low_res)
+
+            content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
+            adversarial_loss = self.bce_loss(self.D(generated), real)
+            g_loss = content_loss + 1E-3 * adversarial_loss
+            g_losses.append(g_loss.item())
+
+            if train:
+                g_loss.backward()
+                self.g_optimizer.step()
+
+            """ Discriminator """
+            self.d_optimizer.zero_grad()
+
+            real_loss = self.bce_loss(self.D(high_res), real)
+            fake_loss = self.bce_loss(self.D(generated.detach()), fake)
+            d_loss = (real_loss + fake_loss) / 2
+            d_losses.append(d_loss.item())
+
+            if train:
+                d_loss.backward()
+                self.d_optimizer.step()
+
+        return np.mean(g_losses), np.mean(d_losses)
 
 class ResidualBlock(nn.Module):
     def __init__(self):
