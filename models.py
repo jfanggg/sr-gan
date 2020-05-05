@@ -42,7 +42,7 @@ class Model():
 
         """ Pretrain Generator """
         if not self.pretrained:
-            print("Starting pretraining. Time: {}".format(time.ctime()))
+            print("Starting pretraining | {}".format(time.strftime('%l:%M%p')))
             self._pretrain(dataloaders['train'])
             self._save_state()
 
@@ -51,7 +51,7 @@ class Model():
                 print("Pretrain G loss: {:.4f}".format(val_g_loss))
 
         """ Real Training """
-        print("Starting training. Time: {}".format(time.ctime()))
+        print("Starting training | {}".format(time.strftime('%l:%M%p')))
         while self.epoch < self.args.epochs:
             # Train one epoch
             self.D.train()
@@ -59,7 +59,7 @@ class Model():
             g_loss, d_loss = self._run_epoch(dataloaders['train'], train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
-            print("Epoch: {}/{} | Time: {}".format(self.epoch, self.args.epochs, time.ctime()))
+            print("Epoch: {}/{} | {}".format(self.epoch, self.args.epochs, time.strftime('%l:%M%p')))
 
             # Print evaluation
             train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
