@@ -9,6 +9,7 @@ import torch.optim as optim
 import torchvision.models as models
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("device: ", device)
 
 class Model():
     def __init__(self, args):
@@ -134,7 +135,8 @@ class Model():
 
     def _pretrain(self, dataloader):
         self.G.train()
-        for _ in range(self.args.pretrain_epochs):
+        for i in range(self.args.pretrain_epochs):
+            print("Pretrain Epoch: {}/{} | {}".format(i, self.args.pretrain_epochs, time.strftime('%l:%M%p')))
             for batch in dataloader:
                 low_res  = batch['low_res'].to(device)
                 high_res = batch['high_res'].to(device)
