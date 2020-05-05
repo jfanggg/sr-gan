@@ -2,6 +2,7 @@ import math
 import numpy as np
 import os
 import pickle
+from PIL import Image
 import sys
 import time
 import torch
@@ -36,7 +37,7 @@ class Model():
         self.bce_loss = torch.nn.BCELoss()
 
     def load_state(self, fname):
-        state = torch.load(fname)
+        state = torch.load(fname, map_location='cpu')
 
         self.epoch = state["epoch"]
         self.train_losses = state["train_losses"]
@@ -100,6 +101,25 @@ class Model():
 
         with torch.no_grad():
             return self.run_epoch(dataloader, train=False)
+
+    def generate(self, dataloader):
+        self.D.eval()
+        self.G.eval()
+
+        if not os.path.exists(self.args.generate_dir):
+            os.mkdir(self.args.generate_dir)
+
+        with torch.no_grad():
+            idx = 0
+            for batch in dataloader:
+                low_res  = batch['low_res'].to(device)
+                generated = self.G(low_res).data.cpu().numpy()
+
+                for idx, g in enumerate(generated):
+                    g = g.transpose((1, 2, 0))
+                    g = np.uint8(g)
+                    im = Image.fromarray(g)
+                    im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
 
     def run_epoch(self, dataloader, train):
         g_losses, d_losses = [], []
