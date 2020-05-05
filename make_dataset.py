@@ -15,8 +15,13 @@ def make_dataset(in_dir, out_dir, num_samples):
     while sampled < num_samples:
         idx = np.random.randint(len(all_files))
         im = Image.open(all_files[idx])
-        w, h = im.size
+        arr = np.array(im)
 
+        # Make sure the image is RGB
+        if arr.ndim != 3:
+            continue
+
+        w, h = im.size
         if w <= IMAGE_SIZE or h <= IMAGE_SIZE:
             continue
 
