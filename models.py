@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
 
 class Model():
@@ -42,7 +42,6 @@ class Model():
         self.vgg19.to(device)
 
         """ Pretrain Generator """
-        """
         if not self.pretrained:
             print("Starting pretraining | {}".format(time.strftime('%l:%M%p')))
             self._pretrain(train_dataloader)
@@ -51,7 +50,6 @@ class Model():
             if val_dataloader:
                 val_g_loss, _ = self.evaluate(val_dataloader)
                 print("Pretrain G loss: {:.4f}".format(val_g_loss))
-        """
 
         """ Real Training """
         print("Starting training | {}".format(time.strftime('%l:%M%p')))

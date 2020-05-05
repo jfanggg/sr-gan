@@ -30,7 +30,7 @@ def parse_args():
 
 def get_dataloader(directory):
     if os.path.exists(directory):
-        return data.DataLoader(ImageDataset(directory), batch_size=4, shuffle=True, num_workers=0)
+        return data.DataLoader(ImageDataset(directory), batch_size=64, shuffle=True, num_workers=4)
     return None
 
 def main():
