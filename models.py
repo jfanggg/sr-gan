@@ -42,6 +42,7 @@ class Model():
         self.vgg19.to(device)
 
         """ Pretrain Generator """
+        """
         if not self.pretrained:
             print("Starting pretraining | {}".format(time.strftime('%l:%M%p')))
             self._pretrain(train_dataloader)
@@ -50,6 +51,7 @@ class Model():
             if val_dataloader:
                 val_g_loss, _ = self.evaluate(val_dataloader)
                 print("Pretrain G loss: {:.4f}".format(val_g_loss))
+        """
 
         """ Real Training """
         print("Starting training | {}".format(time.strftime('%l:%M%p')))
