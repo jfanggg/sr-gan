@@ -176,10 +176,23 @@ class Model():
             real = torch.ones((batch_size, 1), requires_grad=False).to(device)
             fake = torch.zeros((batch_size, 1), requires_grad=False).to(device)
 
-            """ Generator """
-            self.g_optimizer.zero_grad()
 
+            """ Discriminator """
             generated = self.G(low_res)
+            self.d_optimizer.zero_grad()
+
+            real_loss = self.bce_loss(self.D(high_res), real)
+            fake_loss = self.bce_loss(self.D(generated), fake)
+            d_loss = (real_loss + fake_loss) / 2
+            d_losses.append(d_loss.item())
+
+            if train:
+                d_loss.backward()
+                self.d_optimizer.step()
+
+            """ Generator """
+            generated = self.G(low_res)
+            self.g_optimizer.zero_grad()
 
             pixel_loss = self.mse_loss(high_res, generated)
             content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
@@ -190,17 +203,5 @@ class Model():
             if train:
                 g_loss.backward()
                 self.g_optimizer.step()
-
-            """ Discriminator """
-            self.d_optimizer.zero_grad()
-
-            real_loss = self.bce_loss(self.D(high_res), real)
-            fake_loss = self.bce_loss(self.D(generated.detach()), fake)
-            d_loss = (real_loss + fake_loss) / 2
-            d_losses.append(d_loss.item())
-
-            if train:
-                d_loss.backward()
-                self.d_optimizer.step()
 
         return np.mean(g_losses), np.mean(d_losses)
