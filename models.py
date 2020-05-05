@@ -35,35 +35,6 @@ class Model():
         self.mse_loss = torch.nn.MSELoss()
         self.bce_loss = torch.nn.BCELoss()
 
-    def _load_state(self, fname):
-        state = torch.load(fname, map_location='cpu')
-
-        self.pretrained = state["pretrained"]
-        self.epoch = state["epoch"]
-        self.train_losses = state["train_losses"]
-        self.val_losses = state["val_losses"]
-        self.G.load_state_dict(state["G"])
-        self.D.load_state_dict(state["D"])
-        self.g_optimizer.load_state_dict(state["g_optimizer"])
-        self.d_optimizer.load_state_dict(state["d_optimizer"])
-
-    def _save_state(self):
-        if not os.path.exists(self.args.save_dir):
-            os.mkdir(self.args.save_dir)
-
-        fname = "%s/save_%d.pkl" % (self.args.save_dir, self.epoch)
-        state = {
-            "pretrained"    : self.pretrained,
-            "epoch"         : self.epoch,
-            "G"             : self.G.state_dict(),
-            "D"             : self.D.state_dict(),
-            "g_optimizer"   : self.g_optimizer.state_dict(),
-            "d_optimizer"   : self.d_optimizer.state_dict(),
-            "train_losses"  : self.train_losses,
-            "val_losses"    : self.val_losses
-        }
-        torch.save(state, fname)
-
     def train(self, dataloaders):
         self.D.to(device)
         self.G.to(device)
@@ -127,6 +98,35 @@ class Model():
                     g = np.uint8(g)
                     im = Image.fromarray(g)
                     im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
+
+    def _load_state(self, fname):
+        state = torch.load(fname, map_location='cpu')
+
+        self.pretrained = state["pretrained"]
+        self.epoch = state["epoch"]
+        self.train_losses = state["train_losses"]
+        self.val_losses = state["val_losses"]
+        self.G.load_state_dict(state["G"])
+        self.D.load_state_dict(state["D"])
+        self.g_optimizer.load_state_dict(state["g_optimizer"])
+        self.d_optimizer.load_state_dict(state["d_optimizer"])
+
+    def _save_state(self):
+        if not os.path.exists(self.args.save_dir):
+            os.mkdir(self.args.save_dir)
+
+        fname = "%s/save_%d.pkl" % (self.args.save_dir, self.epoch)
+        state = {
+            "pretrained"    : self.pretrained,
+            "epoch"         : self.epoch,
+            "G"             : self.G.state_dict(),
+            "D"             : self.D.state_dict(),
+            "g_optimizer"   : self.g_optimizer.state_dict(),
+            "d_optimizer"   : self.d_optimizer.state_dict(),
+            "train_losses"  : self.train_losses,
+            "val_losses"    : self.val_losses
+        }
+        torch.save(state, fname)
 
     def _pretrain(self, dataloader):
         self.G.train()
