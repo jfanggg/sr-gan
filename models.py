@@ -35,7 +35,7 @@ class Model():
         self.mse_loss = torch.nn.MSELoss()
         self.bce_loss = torch.nn.BCELoss()
 
-    def train(self, dataloaders):
+    def train(self, train_dataloader, val_dataloader=None):
         self.D.to(device)
         self.G.to(device)
         self.vgg19.to(device)
@@ -43,11 +43,11 @@ class Model():
         """ Pretrain Generator """
         if not self.pretrained:
             print("Starting pretraining | {}".format(time.strftime('%l:%M%p')))
-            self._pretrain(dataloaders['train'])
+            self._pretrain(train_dataloader)
             self._save_state()
 
-            if 'val' in dataloaders:
-                val_g_loss, _ = self.evaluate(dataloaders['val'])
+            if val_dataloader:
+                val_g_loss, _ = self.evaluate(val_dataloader)
                 print("Pretrain G loss: {:.4f}".format(val_g_loss))
 
         """ Real Training """
@@ -56,7 +56,7 @@ class Model():
             # Train one epoch
             self.D.train()
             self.G.train()
-            g_loss, d_loss = self._run_epoch(dataloaders['train'], train=True)
+            g_loss, d_loss = self._run_epoch(train_dataloader, train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
             print("Epoch: {}/{} | {}".format(self.epoch, self.args.epochs, time.strftime('%l:%M%p')))
@@ -64,8 +64,8 @@ class Model():
             # Print evaluation
             train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
             if self.epoch % self.args.eval_epochs == 0:
-                if 'val' in dataloaders:
-                    val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
+                if val_dataloader:
+                    val_g_loss, val_d_loss = self.evaluate(val_dataloader)
                     self.val_losses.append([val_g_loss, val_d_loss])
                     train_string += " | Val G loss: {:.4f} | Val D loss: {:.4f}".format(val_g_loss, val_d_loss)
             print(train_string)

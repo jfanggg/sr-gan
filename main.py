@@ -42,14 +42,12 @@ def main():
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    dataloaders = {}
-    for key in ['train', 'val', 'test']:
-        dataloaders[key] = get_dataloader(os.path.join(args.data_dir, key))
+    dataloaders = {key: get_dataloader(os.path.join(args.data_dir, key)) for key in ['train', 'val', 'test']}
 
     model = Model(args)
 
     if args.mode == 'train':
-        model.train(dataloaders)
+        model.train(dataloaders['train'], dataloaders['val'])
 
     elif args.mode == 'evaluate':
         g_loss, d_loss = model.evaluate(dataloaders['test'])
