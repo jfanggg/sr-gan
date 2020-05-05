@@ -117,8 +117,7 @@ class Model():
                     real_im.save(os.path.join(self.args.generate_dir, "{}_real.png".format(i)))
 
     def _load_state(self, fname):
-        # state = torch.load(fname, map_location=torch.device('cpu'))
-        state = torch.load(fname)
+        state = torch.load(fname, map_location=device)
 
         self.pretrained = state["pretrained"]
         self.epoch = state["epoch"]
