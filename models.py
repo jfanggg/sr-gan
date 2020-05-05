@@ -26,7 +26,7 @@ class Model():
         self.val_losses = []
 
         if args.load_model:
-            self.load_state(args.load_model)
+            self._load_state(args.load_model)
 
         # extract all layers prior to the last softmax of VGG-19
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
@@ -37,7 +37,7 @@ class Model():
         self.mse_loss = torch.nn.MSELoss()
         self.bce_loss = torch.nn.BCELoss()
 
-    def load_state(self, fname):
+    def _load_state(self, fname):
         state = torch.load(fname, map_location='cpu')
 
         self.pretrained = state["pretrained"]
@@ -49,7 +49,7 @@ class Model():
         self.g_optimizer.load_state_dict(state["g_optimizer"])
         self.d_optimizer.load_state_dict(state["d_optimizer"])
 
-    def save_state(self):
+    def _save_state(self):
         if not os.path.exists(self.args.save_dir):
             os.mkdir(self.args.save_dir)
 
@@ -74,8 +74,8 @@ class Model():
         """ Pretrain Generator """
         if not self.pretrained:
             print("Starting pretraining. Time: {}".format(time.ctime()))
-            self.pretrain(dataloaders['train'])
-            self.save_state()
+            self._pretrain(dataloaders['train'])
+            self._save_state()
 
         """ Real Training """
         print("Starting training. Time: {}".format(time.ctime()))
@@ -83,7 +83,7 @@ class Model():
             # Train one epoch
             self.D.train()
             self.G.train()
-            g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
+            g_loss, d_loss = self._run_epoch(dataloaders['train'], train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
             print("Epoch: {}/{} | Time: {}".format(self.epoch, self.args.epochs, time.ctime()))
@@ -99,17 +99,17 @@ class Model():
 
             # Save the model
             if self.epoch % self.args.save_epochs == 0:
-                self.save_state()
+                self._save_state()
 
         print("Finished training")
-        self.save_state()
+        self._save_state()
 
     def evaluate(self, dataloader):
         self.D.eval()
         self.G.eval()
 
         with torch.no_grad():
-            return self.run_epoch(dataloader, train=False)
+            return self._run_epoch(dataloader, train=False)
 
     def generate(self, dataloader):
         self.D.eval()
@@ -130,7 +130,7 @@ class Model():
                     im = Image.fromarray(g)
                     im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
 
-    def pretrain(self, dataloader):
+    def _pretrain(self, dataloader):
         self.G.train()
         for _ in range(self.args.pretrain_epochs):
             for batch in dataloader:
@@ -148,7 +148,7 @@ class Model():
 
         self.pretrained = True
 
-    def run_epoch(self, dataloader, train):
+    def _run_epoch(self, dataloader, train):
         g_losses, d_losses = [], []
 
         for batch in dataloader:
