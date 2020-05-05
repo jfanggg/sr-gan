@@ -28,7 +28,7 @@ class Model():
             self._load_state(args.load_model)
 
         # extract all layers prior to the last softmax of VGG-19
-        vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
+        vgg19_layers = list(models.vgg19(pretrained = True).features)[:36]
         self.vgg19 = nn.Sequential(*vgg19_layers).eval()
         for param in self.vgg19.parameters():
             param.requires_grad = False
@@ -43,7 +43,7 @@ class Model():
 
         """ Pretrain Generator """
         if not self.pretrained:
-            print("Starting pretraining | {}".format(time.strftime('%l:%M%p')))
+            print("{} | Starting pretraining".format(time.strftime('%l:%M%p')))
             self._pretrain(train_dataloader)
             self._save_state()
 
@@ -52,7 +52,7 @@ class Model():
                 print("Pretrain G loss: {:.4f}".format(val_g_loss))
 
         """ Real Training """
-        print("Starting training | {}".format(time.strftime('%l:%M%p')))
+        print("{} | Starting training".format(time.strftime('%l:%M%p')))
         while self.epoch < self.args.epochs:
             # Train one epoch
             self.D.train()
@@ -60,7 +60,7 @@ class Model():
             g_loss, d_loss = self._run_epoch(train_dataloader, train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
-            print("Epoch: {}/{} | {}".format(self.epoch, self.args.epochs, time.strftime('%l:%M%p')))
+            print("{} | Epoch: {}/{}".format(time.strftime('%l:%M%p'), self.epoch, self.args.epochs))
 
             # Print evaluation
             train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
@@ -136,7 +136,7 @@ class Model():
     def _pretrain(self, dataloader):
         self.G.train()
         for i in range(self.args.pretrain_epochs):
-            print("Pretrain Epoch: {}/{} | {}".format(i, self.args.pretrain_epochs, time.strftime('%l:%M%p')))
+            print("{} | Pretrain Epoch: {}/{}".format(time.strftime('%l:%M%p'), i, self.args.pretrain_epochs))
             for batch in dataloader:
                 low_res  = batch['low_res'].to(device)
                 high_res = batch['high_res'].to(device)
