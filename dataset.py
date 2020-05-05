@@ -17,12 +17,16 @@ class ImageDataset(data.Dataset):
         im = Image.open(self.files[idx])
 
         small_size = int(IMAGE_SIZE / 4)
-        high_res = np.array(im)
-        low_res  = np.array(im.resize((small_size, small_size), Image.BICUBIC))
+        high_res = np.array(im).astype(np.float64)
+        low_res  = np.array(im.resize((small_size, small_size), Image.BICUBIC)).astype(np.float64)
 
         # swap [H, W, C] to [C, H, W]
         low_res  = low_res.transpose((2, 0, 1))
         high_res = high_res.transpose((2, 0, 1))
+
+        # convert [0-255] to [0, 1]
+        low_res  /= 255.0
+        high_res /= 255.0
         
         return {'low_res' : torch.from_numpy(low_res).float(),
                 'high_res': torch.from_numpy(high_res).float()}

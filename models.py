@@ -19,8 +19,8 @@ class Model():
         self.epoch = 0
         self.G = Generator()
         self.D = Discriminator()
-        self.g_optimizer = optim.Adadelta(self.G.parameters())
-        self.d_optimizer = optim.Adadelta(self.D.parameters())
+        self.g_optimizer = optim.Adam(self.G.parameters())
+        self.d_optimizer = optim.Adam(self.D.parameters())
         self.train_losses = []
         self.val_losses = []
 
@@ -29,7 +29,7 @@ class Model():
 
         # extract all layers prior to the last softmax of VGG-19
         vgg19_layers = list(models.vgg19(pretrained = True).features)[:30]
-        self.vgg19 = nn.Sequential(*vgg19_layers)
+        self.vgg19 = nn.Sequential(*vgg19_layers).eval()
         for param in self.vgg19.parameters():
             param.requires_grad = False
 
