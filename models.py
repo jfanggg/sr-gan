@@ -86,6 +86,13 @@ class Model():
             return self._run_epoch(dataloader, train=False)
 
     def generate(self, dataloader):
+        def to_image(tensor):
+            array = tensor.data.cpu().numpy()
+            array = array.transpose((1, 2, 0))
+            array = np.clip(255.0 * array, 0, 255)
+            array = np.uint8(array)
+            return Image.fromarray(array)
+
         self.D.eval()
         self.G.eval()
 
@@ -96,15 +103,18 @@ class Model():
             idx = 0
             for batch in dataloader:
                 low_res  = batch['low_res'].to(device)
-                generated = self.G(low_res).data.cpu().numpy()
+                hi_res  = batch['high_res']
+                generated = self.G(low_res)
 
-                for idx, g in enumerate(generated):
-                    g = g.transpose((1, 2, 0))
-                    g = np.uint8(g)
-                    im = Image.fromarray(g)
-                    im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
+                for i in range(len(generated)):
+                    fake_im = to_image(generated[i])
+                    real_im = to_image(hi_res[i])
+
+                    fake_im.save(os.path.join(self.args.generate_dir, "{}_fake.png".format(i)))
+                    real_im.save(os.path.join(self.args.generate_dir, "{}_real.png".format(i)))
 
     def _load_state(self, fname):
+        # state = torch.load(fname, map_location=torch.device('cpu'))
         state = torch.load(fname)
 
         self.pretrained = state["pretrained"]
