@@ -11,6 +11,9 @@ import torchvision.models as models
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
 
+def log_message(message):
+    print("{} │ {}".format(time.strftime('%l:%M%p'), message))
+
 class Model():
     def __init__(self, args):
         self.args = args
@@ -43,16 +46,16 @@ class Model():
 
         """ Pretrain Generator """
         if not self.pretrained:
-            print("{} | Starting pretraining".format(time.strftime('%l:%M%p')))
+            log_message("Starting pretraining")
             self._pretrain(train_dataloader)
             self._save_state()
 
             if val_dataloader:
                 val_g_loss, _ = self.evaluate(val_dataloader)
-                print("Pretrain G loss: {:.4f}".format(val_g_loss))
+                log_message("Pretrain G loss: {:.4f}".format(val_g_loss))
 
         """ Real Training """
-        print("{} | Starting training".format(time.strftime('%l:%M%p')))
+        log_message("Starting training")
         while self.epoch < self.args.epochs:
             # Train one epoch
             self.D.train()
@@ -60,7 +63,7 @@ class Model():
             g_loss, d_loss = self._run_epoch(train_dataloader, train=True)
             self.train_losses.append([g_loss, d_loss])
             self.epoch += 1
-            print("{} | Epoch: {}/{}".format(time.strftime('%l:%M%p'), self.epoch, self.args.epochs))
+            log_message("Epoch: {}/{}".format(self.epoch, self.args.epochs))
 
             # Print evaluation
             train_string = "Train G loss: {:.4f} | Train D loss: {:.4f}".format(g_loss, d_loss)
@@ -69,13 +72,13 @@ class Model():
                     val_g_loss, val_d_loss = self.evaluate(val_dataloader)
                     self.val_losses.append([val_g_loss, val_d_loss])
                     train_string += " | Val G loss: {:.4f} | Val D loss: {:.4f}".format(val_g_loss, val_d_loss)
-            print(train_string)
+            log_message(train_string)
 
             # Save the model
             if self.epoch % self.args.save_epochs == 0:
                 self._save_state()
 
-        print("Finished training")
+        log_message("Finished training")
         self._save_state()
 
     def evaluate(self, dataloader):
@@ -146,7 +149,7 @@ class Model():
     def _pretrain(self, dataloader):
         self.G.train()
         for i in range(self.args.pretrain_epochs):
-            print("{} | Pretrain Epoch: {}/{}".format(time.strftime('%l:%M%p'), i, self.args.pretrain_epochs))
+            log_message("Pretrain Epoch: {}/{}".format(i, self.args.pretrain_epochs))
             for batch in dataloader:
                 low_res  = batch['low_res'].to(device)
                 high_res = batch['high_res'].to(device)
