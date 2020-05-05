@@ -16,6 +16,7 @@ class Model():
     def __init__(self, args):
         self.args = args
 
+        self.pretrained = False
         self.epoch = 0
         self.G = Generator()
         self.D = Discriminator()
@@ -39,6 +40,7 @@ class Model():
     def load_state(self, fname):
         state = torch.load(fname, map_location='cpu')
 
+        self.pretrained = state["pretrained"]
         self.epoch = state["epoch"]
         self.train_losses = state["train_losses"]
         self.val_losses = state["val_losses"]
@@ -53,13 +55,14 @@ class Model():
 
         fname = "%s/save_%d.pkl" % (self.args.save_dir, self.epoch)
         state = {
-            "epoch"       : self.epoch,
-            "G"           : self.G.state_dict(),
-            "D"           : self.D.state_dict(),
-            "g_optimizer" : self.g_optimizer.state_dict(),
-            "d_optimizer" : self.d_optimizer.state_dict(),
-            "train_losses": self.train_losses,
-            "val_losses"  : self.val_losses
+            "pretrained"    : self.pretrained,
+            "epoch"         : self.epoch,
+            "G"             : self.G.state_dict(),
+            "D"             : self.D.state_dict(),
+            "g_optimizer"   : self.g_optimizer.state_dict(),
+            "d_optimizer"   : self.d_optimizer.state_dict(),
+            "train_losses"  : self.train_losses,
+            "val_losses"    : self.val_losses
         }
         torch.save(state, fname)
 
@@ -67,10 +70,17 @@ class Model():
         self.D.to(device)
         self.G.to(device)
         self.vgg19.to(device)
-        print("Starting training. Time: {}".format(time.ctime()))
 
-        while self.epoch <= self.args.epochs:
-            # Train for one epoch
+        """ Pretrain Generator """
+        if not self.pretrained:
+            print("Starting pretraining. Time: {}".format(time.ctime()))
+            self.pretrain(dataloaders['train'])
+            self.save_state()
+
+        """ Real Training """
+        print("Starting training. Time: {}".format(time.ctime()))
+        while self.epoch < self.args.epochs:
+            # Train one epoch
             self.D.train()
             self.G.train()
             g_loss, d_loss = self.run_epoch(dataloaders['train'], train=True)
@@ -85,7 +95,6 @@ class Model():
                     val_g_loss, val_d_loss = self.evaluate(dataloaders['val'])
                     self.val_losses.append([val_g_loss, val_d_loss])
                     train_string += " | Val G loss: {:.4f} | Val D loss: {:.4f}".format(val_g_loss, val_d_loss)
-
             print(train_string)
 
             # Save the model
@@ -121,6 +130,24 @@ class Model():
                     im = Image.fromarray(g)
                     im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
 
+    def pretrain(self, dataloader):
+        self.G.train()
+        for _ in range(self.args.pretrain_epochs):
+            for batch in dataloader:
+                low_res  = batch['low_res'].to(device)
+                high_res = batch['high_res'].to(device)
+
+                self.g_optimizer.zero_grad()
+
+                generated = self.G(low_res)
+
+                # Optimize pixel loss
+                g_loss = self.mse_loss(generated, high_res)
+                g_loss.backward()
+                self.g_optimizer.step()
+
+        self.pretrained = True
+
     def run_epoch(self, dataloader, train):
         g_losses, d_losses = [], []
 
@@ -137,9 +164,10 @@ class Model():
 
             generated = self.G(low_res)
 
+            pixel_loss = self.mse_loss(high_res, generated)
             content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
             adversarial_loss = self.bce_loss(self.D(generated), real)
-            g_loss = content_loss + 1E-3 * adversarial_loss
+            g_loss = pixel_loss + 0.006 * content_loss + 1E-3 * adversarial_loss
             g_losses.append(g_loss.item())
 
             if train:
