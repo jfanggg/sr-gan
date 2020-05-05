@@ -46,6 +46,10 @@ class Model():
             self._pretrain(dataloaders['train'])
             self._save_state()
 
+            if 'val' in dataloaders:
+                val_g_loss, _ = self.evaluate(dataloaders['val'])
+                print("Pretrain G loss: {:.4f}".format(val_g_loss))
+
         """ Real Training """
         print("Starting training. Time: {}".format(time.ctime()))
         while self.epoch < self.args.epochs:
@@ -100,7 +104,7 @@ class Model():
                     im.save(os.path.join(self.args.generate_dir, "gen_{}.png".format(idx)))
 
     def _load_state(self, fname):
-        state = torch.load(fname, map_location='cpu')
+        state = torch.load(fname)
 
         self.pretrained = state["pretrained"]
         self.epoch = state["epoch"]
