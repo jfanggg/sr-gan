@@ -22,8 +22,8 @@ class Model():
         self.epoch = 0
         self.G = Generator()
         self.D = Discriminator()
-        self.g_optimizer = optim.Adam(self.G.parameters())
-        self.d_optimizer = optim.Adam(self.D.parameters())
+        self.g_optimizer = optim.Adam(self.G.parameters(), lr=1E-4)
+        self.d_optimizer = optim.Adam(self.D.parameters(), lr=1E-4)
         self.train_losses = []
         self.val_losses = []
 
@@ -194,7 +194,7 @@ class Model():
             self.g_optimizer.zero_grad()
 
             pixel_loss = self.mse_loss(high_res, generated)
-            content_loss = self.mse_loss(self.vgg19(high_res), self.vgg19(generated))
+            content_loss = self.mse_loss(self.vgg19((high_res + 1) / 2), self.vgg19((generated + 1) / 2))
             adversarial_loss = self.bce_loss(self.D(generated), real)
             g_loss = pixel_loss + 0.006 * content_loss + 1E-3 * adversarial_loss
             g_losses.append(g_loss.item())
