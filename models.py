@@ -182,7 +182,7 @@ class Model():
 
             real_loss = self.bce_loss(self.D(high_res), real)
             fake_loss = self.bce_loss(self.D(generated), fake)
-            d_loss = (real_loss + fake_loss) / 2
+            d_loss = real_loss + fake_loss
             d_losses.append(d_loss.item())
 
             if train:

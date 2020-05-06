@@ -24,9 +24,9 @@ class ImageDataset(data.Dataset):
         low_res  = low_res.transpose((2, 0, 1))
         high_res = high_res.transpose((2, 0, 1))
 
-        # convert [0-255] to [0, 1]
-        low_res  /= 255.0
-        high_res /= 255.0
+        # convert low res to [0, 1] and high_res to [-1, 1]
+        low_res = low_res / 255.0
+        high_res = 2 * high_res / 255.0 - 1
         
         return {'low_res' : torch.from_numpy(low_res).float(),
                 'high_res': torch.from_numpy(high_res).float()}
