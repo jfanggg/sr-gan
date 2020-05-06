@@ -117,7 +117,11 @@ class Model():
                     real_im.save(os.path.join(self.args.generate_dir, "{}_real.png".format(i)))
 
     def _load_state(self, fname):
-        state = torch.load(fname, map_location=device)
+        if torch.cuda.is_available():
+            map_location=lambda storage, loc: storage.cuda()
+        else:
+            map_location='cpu'
+        state = torch.load(fname, map_location=map_location)
 
         self.pretrained = state["pretrained"]
         self.epoch = state["epoch"]
