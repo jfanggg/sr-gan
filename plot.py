@@ -16,14 +16,15 @@ def main():
     model = Model(args)
 
     # assumes main.py was run with --eval_epochs=5
-    val_x = [5 * i for i in range(len(model.val_losses))]
+    train_x = list(range(1, len(model.train_losses) + 1))
+    val_x = [5 * (i+1) for i in range(len(model.val_losses))]
     train_losses = np.array(model.train_losses)
     val_losses = np.array(model.val_losses)
 
     # Plot G loss
     train_g_loss = train_losses[:, 0]
     val_g_loss = val_losses[:, 0]
-    plt.plot(train_g_loss, label='Train G')
+    plt.plot(train_x, train_g_loss, label='Train G')
     plt.plot(val_x, val_g_loss, label='Val G')
     plt.legend()
     plt.xlabel("Epochs")
@@ -35,7 +36,7 @@ def main():
     # Plot D loss
     train_d_loss = train_losses[:, 1]
     val_d_loss = val_losses[:, 1]
-    plt.plot(train_d_loss, label='Train D')
+    plt.plot(train_x, train_d_loss, label='Train D')
     plt.plot(val_x, val_d_loss, label='Val D')
     plt.legend()
     plt.xlabel("Epochs")
