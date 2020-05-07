@@ -52,7 +52,7 @@ class Generator(nn.Module):
         x = self.conv3(x)
 
         # map LR ([0, 1]) to HR ([-1, 1])
-        return 2 * x + 1
+        return 2 * x - 1
 
 def conv_block(in_channels, out_channels, kernel_size, stride, padding):
     return nn.Sequential(
