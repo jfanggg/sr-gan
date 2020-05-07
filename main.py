@@ -36,7 +36,6 @@ def get_dataloader(directory):
 def main():
     args = parse_args()
     print(args)
-    sys.stdout.flush()
 
     random.seed(args.seed)
     np.random.seed(args.seed)
