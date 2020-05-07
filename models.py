@@ -92,7 +92,7 @@ class Model():
         def to_image(tensor):
             array = tensor.data.cpu().numpy()
             array = array.transpose((1, 2, 0))
-            array = np.clip(255.0 * array, 0, 255)
+            array = np.clip(255.0 * (array + 1) / 2, 0, 255)
             array = np.uint8(array)
             return Image.fromarray(array)
 
@@ -110,11 +110,19 @@ class Model():
                 generated = self.G(low_res)
 
                 for i in range(len(generated)):
+                    naive = np.clip(255.0 * low_res[i].data.cpu().numpy().transpose((1, 2, 0)), 0, 255)
+                    naive = Image.fromarray(np.uint8(naive))
+                    naive = naive.resize((96, 96), Image.BICUBIC)
+
                     fake_im = to_image(generated[i])
                     real_im = to_image(hi_res[i])
 
+                    naive.save(os.path.join(self.args.generate_dir, "{}_naive.png".format(i)))
                     fake_im.save(os.path.join(self.args.generate_dir, "{}_fake.png".format(i)))
                     real_im.save(os.path.join(self.args.generate_dir, "{}_real.png".format(i)))
+
+                    if i > 10:
+                        return
 
     def _load_state(self, fname):
         if torch.cuda.is_available():
