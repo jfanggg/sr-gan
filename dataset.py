@@ -6,7 +6,6 @@ from PIL import Image
 import random
 import torch
 from torch.utils import data
-from torchvision.transforms import Normalize
 
 class ImageDataset(data.Dataset):
     def __init__(self, path, train=False):
@@ -43,9 +42,5 @@ class ImageDataset(data.Dataset):
         # convert to tensor
         low_res = torch.from_numpy(low_res).float()
         high_res = torch.from_numpy(high_res).float()
-
-        # normalize low resolution image for VGG
-        vgg_norm = Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        low_res = vgg_norm(low_res)
 
         return {'low_res' : low_res, 'high_res': high_res}

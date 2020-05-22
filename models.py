@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.models as models
+from torchvision.transforms import Normalize
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("device: ", device)
@@ -214,8 +215,16 @@ class Model():
             generated = self.G(low_res)
             self.g_optimizer.zero_grad()
 
+            # take a [B, C, W, H] batch of [-1, 1] images, normalize, then run through vgg19
+            def vgg_features(image):
+                mean = torch.tensor([0.485, 0.456, 0.406]).unsqueeze(0).unsqueeze(2).unsqueeze(3)
+                std  = torch.tensor([0.229, 0.224, 0.225]).unsqueeze(0).unsqueeze(2).unsqueeze(3)
+                image = (image + 1) / 2
+                image = (image - mean) / std
+                return self.vgg19(image)
+
             pixel_loss = self.mse_loss(high_res, generated)
-            content_loss = self.mse_loss(self.vgg19((high_res + 1) / 2), self.vgg19((generated + 1) / 2))
+            content_loss = self.mse_loss(vgg_features(high_res), vgg_features(generated))
             adversarial_loss = self.bce_loss(self.D(generated), real)
             g_loss = pixel_loss + 0.006 * content_loss + 1E-3 * adversarial_loss
             g_losses.append(g_loss.item())

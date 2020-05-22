@@ -56,7 +56,6 @@ def main():
     elif args.mode == 'evaluate':
         g_loss, d_loss = model.evaluate(dataloaders['test'])
         print("Test G loss: {:.4f} | Test D loss: {:.4f}".format(g_loss, d_loss))
-
     elif args.mode == 'generate':
         model.generate(dataloaders['test'])
 
