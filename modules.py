@@ -1,3 +1,4 @@
+from constants import IMAGE_SIZE
 import math
 import torch
 import torch.nn as nn
@@ -69,7 +70,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         in_channels = 3
-        im_width = 96
+        im_width = IMAGE_SIZE
 
         layers = []
         for idx, out_channels in enumerate([64, 128, 256, 512]):

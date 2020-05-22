@@ -3,12 +3,15 @@ import glob
 import numpy as np
 import os
 from PIL import Image
+import random
 import torch
 from torch.utils import data
+from torchvision.transforms import Normalize
 
 class ImageDataset(data.Dataset):
-    def __init__(self, path):
+    def __init__(self, path, train=False):
         self.files = [f for f in glob.glob(os.path.join(path, "*.png"))]
+        self.train = train
 
     def __len__(self):
         return len(self.files)
@@ -20,13 +23,29 @@ class ImageDataset(data.Dataset):
         high_res = np.array(im).astype(np.float64)
         low_res  = np.array(im.resize((small_size, small_size), Image.BICUBIC)).astype(np.float64)
 
-        # swap [H, W, C] to [C, H, W]
-        low_res  = low_res.transpose((2, 0, 1))
-        high_res = high_res.transpose((2, 0, 1))
-
         # convert low res to [0, 1] and high_res to [-1, 1]
         low_res = low_res / 255.0
         high_res = 2 * high_res / 255.0 - 1
         
-        return {'low_res' : torch.from_numpy(low_res).float(),
-                'high_res': torch.from_numpy(high_res).float()}
+        # random horizontal and vertical flips for training data
+        if self.train:
+            if random.randint(0, 1):
+                low_res = np.fliplr(low_res).copy()
+                high_res = np.fliplr(high_res).copy()
+            if random.randint(0, 1):
+                low_res = np.flipud(low_res).copy()
+                high_res = np.flipud(high_res).copy()
+
+        # swap [H, W, C] to [C, H, W]
+        low_res  = low_res.transpose((2, 0, 1))
+        high_res = high_res.transpose((2, 0, 1))
+
+        # convert to tensor
+        low_res = torch.from_numpy(low_res).float()
+        high_res = torch.from_numpy(high_res).float()
+
+        # normalize low resolution image for VGG
+        vgg_norm = Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        low_res = vgg_norm(low_res)
+
+        return {'low_res' : low_res, 'high_res': high_res}

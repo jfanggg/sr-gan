@@ -28,9 +28,12 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def get_dataloader(directory):
-    if os.path.exists(directory):
-        return data.DataLoader(ImageDataset(directory), batch_size=64, shuffle=True, num_workers=4)
+def get_dataloader(data_dir, subdir, train=None):
+    full_directory = os.path.join(data_dir, subdir)
+    if os.path.exists(full_directory):
+        dataset = ImageDataset(full_directory, train)
+        return data.DataLoader(dataset, batch_size=16, shuffle=True, num_workers=4)
+        # return data.DataLoader(dataset, batch_size=2, shuffle=False, num_workers=0)
     return None
 
 def main():
@@ -41,13 +44,15 @@ def main():
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    dataloaders = {key: get_dataloader(os.path.join(args.data_dir, key)) for key in ['train', 'val', 'test']}
+    dataloaders = {}
+    dataloaders['train'] = get_dataloader(args.data_dir, 'train', train=True)
+    dataloaders['val']   = get_dataloader(args.data_dir, 'val')
+    dataloaders['test']  = get_dataloader(args.data_dir, 'test')
 
     model = Model(args)
 
     if args.mode == 'train':
         model.train(dataloaders['train'], dataloaders['val'])
-
     elif args.mode == 'evaluate':
         g_loss, d_loss = model.evaluate(dataloaders['test'])
         print("Test G loss: {:.4f} | Test D loss: {:.4f}".format(g_loss, d_loss))
