@@ -3,3 +3,5 @@
 !*.py
 !*.txt
 !*.md
+!misc/
+!misc/*.py
