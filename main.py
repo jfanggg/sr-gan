@@ -15,7 +15,7 @@ def parse_args():
 
     # Training Args
     parser.add_argument('--load_model', type=str, default=None, help='Name of file to load model from')
-    parser.add_argument('--pretrain_epochs', type=int, default=3, help='Number of epochs to pretrain generator for')
+    parser.add_argument('--pretrain_epochs', type=int, default=5, help='Number of epochs to pretrain generator for')
     parser.add_argument('--epochs', type=int, default=80, help='Number of epochs to train for')
     parser.add_argument('--eval_epochs', type=int, default=5, help='How often (in epochs) to evaluate model')
     parser.add_argument('--save_epochs', type=int, default=5, help='How often (in epochs) to save model')
