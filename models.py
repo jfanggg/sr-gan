@@ -24,6 +24,8 @@ class Model():
         self.D = Discriminator()
         self.g_optimizer = optim.Adam(self.G.parameters(), lr=1E-4)
         self.d_optimizer = optim.Adam(self.D.parameters(), lr=1E-4)
+        self.g_scheduler = optim.lr_scheduler.StepLR(self.g_optimizer, step_size=40)
+        self.d_scheduler = optim.lr_scheduler.StepLR(self.d_optimizer, step_size=40)
         self.train_losses = []
         self.val_losses = []
 
@@ -60,8 +62,12 @@ class Model():
             # Train one epoch
             self.D.train()
             self.G.train()
+
             g_loss, d_loss = self._run_epoch(train_dataloader, train=True)
+
             self.train_losses.append([g_loss, d_loss])
+            self.g_scheduler.step()
+            self.d_scheduler.step()
             self.epoch += 1
             log_message("Epoch: {}/{}".format(self.epoch, self.args.epochs))
 
@@ -103,7 +109,6 @@ class Model():
             os.mkdir(self.args.generate_dir)
 
         with torch.no_grad():
-            idx = 0
             for batch in dataloader:
                 low_res  = batch['low_res'].to(device)
                 hi_res  = batch['high_res']
@@ -139,6 +144,8 @@ class Model():
         self.D.load_state_dict(state["D"])
         self.g_optimizer.load_state_dict(state["g_optimizer"])
         self.d_optimizer.load_state_dict(state["d_optimizer"])
+        self.g_scheduler.load_state_dict(state["g_scheduler"])
+        self.d_scheduler.load_state_dict(state["d_scheduler"])
 
     def _save_state(self):
         if not os.path.exists(self.args.save_dir):
@@ -152,6 +159,8 @@ class Model():
             "D"             : self.D.state_dict(),
             "g_optimizer"   : self.g_optimizer.state_dict(),
             "d_optimizer"   : self.d_optimizer.state_dict(),
+            "g_scheduler"   : self.g_scheduler.state_dict(),
+            "d_scheduler"   : self.d_scheduler.state_dict(),
             "train_losses"  : self.train_losses,
             "val_losses"    : self.val_losses
         }
