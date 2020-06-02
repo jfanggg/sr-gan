@@ -216,8 +216,8 @@ class Model():
 
             # take a [B, C, W, H] batch of [-1, 1] images, normalize, then run through vgg19
             def vgg_features(image):
-                mean = torch.tensor([0.485, 0.456, 0.406]).unsqueeze(0).unsqueeze(2).unsqueeze(3)
-                std  = torch.tensor([0.229, 0.224, 0.225]).unsqueeze(0).unsqueeze(2).unsqueeze(3)
+                mean = torch.tensor([0.485, 0.456, 0.406]).unsqueeze(0).unsqueeze(2).unsqueeze(3).to(device)
+                std  = torch.tensor([0.229, 0.224, 0.225]).unsqueeze(0).unsqueeze(2).unsqueeze(3).to(device)
                 image = (image + 1) / 2
                 image = (image - mean) / std
                 return self.vgg19(image)
