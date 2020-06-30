@@ -146,6 +146,15 @@ class Model():
         self.d_optimizer.load_state_dict(state["d_optimizer"])
         self.g_scheduler.load_state_dict(state["g_scheduler"])
         self.d_scheduler.load_state_dict(state["d_scheduler"])
+        
+        for state in self.d_optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(device)
+        for state in self.g_optimizer.state.values():
+            for k, v in state.items():
+                if torch.is_tensor(v):
+                    state[k] = v.to(device)
 
     def _save_state(self):
         if not os.path.exists(self.args.save_dir):
